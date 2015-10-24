@@ -18,12 +18,15 @@
 <p>No polls are available.</p>
 {% endif %}
 <ul>
-{% for p in 3|get_range %}
+{% for p in max_page|get_range %}
   <li>
-  {% if p is index %}
-  <b>{{p}}</b>
-  {% else %}
-  {% endif %}
+    <a href="/quote/{{p}}">
+    {% if p == index %}
+      <b>{{p}}</b>
+    {% else %}
+      {{p}}
+    {% endif %}
+    </a>
   </li>
 {% endfor %}
 </ul>

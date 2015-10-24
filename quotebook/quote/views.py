@@ -11,10 +11,10 @@ from .forms import QuoteForm
 # Index page
 def index(request, page_index=None):
     index = 0
-    if page_index:
-        index = int(page_index) * 5
+    if page_index and int(page_index) > 0:
+        index = (int(page_index) - 1) * 5
     quote_list = Quote.objects.order_by('-pub_date')
-    latest_quote_list = quote_list[index:5]
+    latest_quote_list = quote_list[index:index + 5]
     template = loader.get_template('quote/index.html')
     context = RequestContext(request,
             { 'latest_quote_list' : latest_quote_list,
