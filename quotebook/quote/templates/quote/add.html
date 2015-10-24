@@ -1,0 +1,8 @@
+<h1>Add a quote</h1>
+
+<form action="/quote/add/" method="post">
+  {% csrf_token %}
+  {{ form }}
+  <input type="submit" value="Submit" />
+</form>
+<a href="/quote/">Retourner à la liste de citations</a>

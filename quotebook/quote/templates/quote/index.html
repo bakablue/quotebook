@@ -1,0 +1,29 @@
+{% load filters %}
+{% if latest_quote_list %}
+<a href="/quote/add">Ajouter une citation</a>
+<ul>
+  {% for quote in latest_quote_list %}
+  <li>
+    <h2>
+      {% for author in quote.authors.all %}
+      {{author.author_text}} 
+      {% endfor %}
+    </h2>
+    <i>{{quote.context_text}}</i>
+    <p>{{quote.quote_text}}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No polls are available.</p>
+{% endif %}
+<ul>
+{% for p in 3|get_range %}
+  <li>
+  {% if p is index %}
+  <b>{{p}}</b>
+  {% else %}
+  {% endif %}
+  </li>
+{% endfor %}
+</ul>
