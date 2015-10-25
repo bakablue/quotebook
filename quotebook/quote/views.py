@@ -3,7 +3,7 @@ from django.http                import HttpResponse
 from django.template            import RequestContext, loader
 from django.shortcuts           import render
 from django.utils               import timezone
-from django.contrib.auth        import authenticate, logout
+from django.contrib.auth        import authenticate, login, logout
 from django.contrib.auth.models import User
 
 from .models                    import Quote
@@ -86,33 +86,34 @@ def signup(request):
         form = UserForm(request.POST)
 
         if form.is_valid():
-            login = form.cleaned_data['login']
+            pseudo = form.cleaned_data['pseudo']
             mail = form.cleaned_data['mail']
             password = form.cleaned_data['password']
             pass_confirmation = form.cleaned_data['pass_confirmation']
             if password == pass_confirmation:
-                user = User.objects.create_user(login, mail, password)
+                user = User.objects.create_user(pseudo, mail, password)
                 user.save()
-                #send_validation_mail(login, mail)
+                #send_validation_mail(pseudo, mail)
     else:
         form = UserForm()
     return render(request, 'quote/signup.html', { 'form' : form })
 
 
-def login(request):
+def connect(request):
     if request.method == 'POST':
         # Form instance
         form = LoginForm(request.POST)
 
         if form.is_valid():
-            login = form.cleaned_data['login']
-            password = form.cleaned_data['password']
-            user = authenticate(username=login, password=passwd)
+            pseudo = form.cleaned_data['pseudo']
+            passwd = form.cleaned_data['password']
+            user = authenticate(username=pseudo, password=passwd)
             if user is not None:
                 # User exist
                 if user.is_active:
                     # Enabled account
-                    pass
+                    login(request, user)
+                    return HttpResponseRedirect('/quote/')
                 else:
                     # Disabled account
                     pass
@@ -122,7 +123,7 @@ def login(request):
     else:
         form = LoginForm()
     # FIXME: errors etc
-        return render(request, 'quote/login.html', { 'form' : form })
+    return render(request, 'quote/login.html', { 'form' : form })
 
 def disconnect(request):
     logout(request)

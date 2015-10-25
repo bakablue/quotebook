@@ -63,13 +63,13 @@
 <ul>
 {% for p in max_page|get_range %}
   <li>
-    <a href="/quote/{{p}}">
     {% if p == index %}
       <b>{{p}}</b>
     {% else %}
+    <a href="/quote/{{p}}">
       {{p}}
-    {% endif %}
     </a>
+    {% endif %}
   </li>
 {% endfor %}
 </ul>
