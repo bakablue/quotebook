@@ -1,12 +1,17 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.template import RequestContext, loader
-from django.shortcuts import render
-from django.utils import timezone
+from django.shortcuts           import render
+from django.http                import HttpResponse
+from django.template            import RequestContext, loader
+from django.shortcuts           import render
+from django.utils               import timezone
+from django.contrib.auth        import authenticate
+from django.contrib.auth.models import User
 
-from .models import Quote
-from .models import Author
-from .forms import QuoteForm
+from .models                    import Quote
+from .models                    import Author
+from .forms                     import QuoteForm
+from .forms                     import UserForm
+from .forms                     import LoginForm
+from .tools                     import *
 
 # Index page
 def index(request, page_index=None):
@@ -27,32 +32,79 @@ def index(request, page_index=None):
 def detail(request, quote_id):
     return HttpResponse("You're looking at quote %s." % quote_id)
 
-#def add_quote(request):
-#    template = loader.get_template('form/add_quote.html')
-#    context = RequestContext(request)
-#    return HttpResponse(template.render(context))
+# FIXME: error management
+def signup(request):
+    if request.method == 'POST':
+        # Form instance
+        form = UserForm(request.POST)
+
+        if form.is_valid():
+            login = form.cleaned_data['login']
+            mail = form.cleaned_data['mail']
+            password = form.cleaned_data['password']
+            pass_confirmation = form.cleaned_data['pass_confirmation']
+            if password == pass_confirmation:
+                user = User.objects.create_user(login, mail, password)
+                user.save()
+                #send_validation_mail(login, mail)
+    else:
+        form = UserForm()
+    return render(request, 'quote/signup.html', { 'form' : form })
+
+
+def login(request):
+    if request.method == 'POST':
+        # Form instance
+        form = LoginForm(request.POST)
+
+        if form.is_valid():
+            login = form.cleaned_data['login']
+            password = form.cleaned_data['password']
+            user = authenticate(username=login, password=passwd)
+            if user is not None:
+                # User exist
+                if user.is_active:
+                    # Enabled account
+                    pass
+                else:
+                    # Disabled account
+                    pass
+            else:
+                # Incorrect password/user
+                pass
+    else:
+        form = LoginForm()
+    # FIXME: errors etc
+        return render(request, 'quote/login.html', { 'form' : form })
 
 # View to add quotes
 def add(request):
-    if request.method == 'POST':
-        # Form instance
-        form = QuoteForm(request.POST)
+    if request.user.is_authenticated():
+        if request.method == 'POST':
+            # Form instance
+            form = QuoteForm(request.POST)
 
-        if form.is_valid():
-            authors = form.cleaned_data['author']
-            context = form.cleaned_data['context']
-            quote = form.cleaned_data['quote']
-            q = Quote(quote_text=quote,
-                      context_text=context,
-                      pub_date=timezone.now())
-            q.save()
+            if form.is_valid():
+                authors = form.cleaned_data['author']
+                context = form.cleaned_data['context']
+                quote = form.cleaned_data['quote']
+                q = Quote(quote_text=quote,
+                          context_text=context,
+                          pub_date=timezone.now())
+                q.save()
 
-            list_authors = authors.split(', ')
-            for a in list_authors:
-                author = Author(author_text=a)
+                list_authors = authors.split(', ')
+                for a in list_authors:
+                    author = Author(author_text=a)
                 author.save()
                 q.authors.add(author)
-            return HttpResponse("Thanks.")
+                return HttpResponse("Thanks.")
+        else:
+            form = QuoteForm()
+        return render(request, 'quote/add.html', { 'form' : form })
     else:
-        form = QuoteForm()
-    return render(request, 'quote/add.html', { 'form' : form })
+        # The user must log in
+        return HttpResponseRedirect('/quote/login/')
+
+def logout(request):
+    logout(request)
