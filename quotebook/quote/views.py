@@ -3,7 +3,7 @@ from django.http                import HttpResponse
 from django.template            import RequestContext, loader
 from django.shortcuts           import render
 from django.utils               import timezone
-from django.contrib.auth        import authenticate
+from django.contrib.auth        import authenticate, logout
 from django.contrib.auth.models import User
 
 from .models                    import Quote
@@ -31,6 +31,53 @@ def index(request, page_index=None):
 # Test
 def detail(request, quote_id):
     return HttpResponse("You're looking at quote %s." % quote_id)
+
+# View to add quotes
+def add(request):
+    if request.user.is_authenticated():
+        if request.method == 'POST':
+            # Form instance
+            form = QuoteForm(request.POST)
+
+            if form.is_valid():
+                authors = form.cleaned_data['author']
+                context = form.cleaned_data['context']
+                quote = form.cleaned_data['quote']
+                q = Quote(quote_text=quote,
+                          context_text=context,
+                          pub_date=timezone.now())
+                q.save()
+
+                list_authors = authors.split(', ')
+                for a in list_authors:
+                    if a not in Author.objects.all():
+                        author = Author(author_text=a)
+                        author.save()
+                q.authors.add(author)
+                return HttpResponse("Thanks.")
+        else:
+            form = QuoteForm()
+        return render(request, 'quote/add.html', { 'form' : form })
+    else:
+        # The user must log in
+        return HttpResponseRedirect('/quote/login/')
+
+def vote(request, quote_id, vote_type):
+    if request.user.is_authenticated():
+        q = Quote.objects.get(id=quote_id)
+        if vote_type == 'like' and request.user not in q.auth_likes.all():
+            if request.user in q.auth_hates.all():
+                q.auth_hates.remove(request.user)
+            q.auth_likes.add(request.user)
+        elif vote_type == 'hate' and request.user not in q.auth_hates.all():
+            if request.user in q.auth_likes.all():
+                q.auth_likes.remove(request.user)
+            q.auth_hates.add(request.user)
+    else:
+        pass
+    return HttpResponseRedirect('/quote/')
+
+# User management
 
 # FIXME: error management
 def signup(request):
@@ -77,34 +124,6 @@ def login(request):
     # FIXME: errors etc
         return render(request, 'quote/login.html', { 'form' : form })
 
-# View to add quotes
-def add(request):
-    if request.user.is_authenticated():
-        if request.method == 'POST':
-            # Form instance
-            form = QuoteForm(request.POST)
-
-            if form.is_valid():
-                authors = form.cleaned_data['author']
-                context = form.cleaned_data['context']
-                quote = form.cleaned_data['quote']
-                q = Quote(quote_text=quote,
-                          context_text=context,
-                          pub_date=timezone.now())
-                q.save()
-
-                list_authors = authors.split(', ')
-                for a in list_authors:
-                    author = Author(author_text=a)
-                author.save()
-                q.authors.add(author)
-                return HttpResponse("Thanks.")
-        else:
-            form = QuoteForm()
-        return render(request, 'quote/add.html', { 'form' : form })
-    else:
-        # The user must log in
-        return HttpResponseRedirect('/quote/login/')
-
-def logout(request):
+def disconnect(request):
     logout(request)
+    return HttpResponseRedirect('/quote/')

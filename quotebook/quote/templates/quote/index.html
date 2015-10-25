@@ -1,6 +1,19 @@
 {% load filters %}
+
+<?-- Menu -->
+<ul>
+{% if user.is_authenticated %}
+  <li><a href="/quote/add">Ajouter une citation</a></li>
+  <li><a href="/quote/logout">Déconnection</a></li>
+{% else %}
+  <li><a href="/quote/signup">Inscription</a></li>
+  <li>Déjà inscrit ? <a href="/quote/login">Identifie toi !<a></li>
+{% endif %}
+</ul>
+
 {% if latest_quote_list %}
-<a href="/quote/add">Ajouter une citation</a>
+
+<?-- Display every quotes -->
 <ul>
   {% for quote in latest_quote_list %}
   <li>
@@ -11,12 +24,42 @@
     </h2>
     <i>{{quote.context_text}}</i>
     <p>{{quote.quote_text}}</p>
+
+    <ul>
+    {% if user.is_authenticated %}
+
+      <li>
+      <?-- Likes -->
+      {{ quote.auth_likes.all|len_list }}
+      {% if user not in quote.auth_likes.all %}
+        <a href="/quote/vote/{{quote.id}}/like">
+           +
+        </a>
+      {% else %}
+        +
+      {% endif %}
+      </li>
+      <li>
+      <?-- Hates -->
+      {{ quote.auth_hates.all|len_list }}
+      {% if user not in quote.auth_hates.all %}
+        <a href="/quote/vote/{{quote.id}}/hate">
+          -
+        </a>
+      {% else %}
+        -
+      {% endif %}
+      </li>
+    {% else %}
+    <li>{{ quote.auth_likes.all|len_list }} +</li>
+    <li>{{ quote.auth_hates.all|len_list }} -</li>
+    {% endif %}
+    </ul>
   </li>
   {% endfor %}
 </ul>
-{% else %}
-<p>No polls are available.</p>
-{% endif %}
+
+<?-- Display of the page links -->
 <ul>
 {% for p in max_page|get_range %}
   <li>
@@ -30,3 +73,8 @@
   </li>
 {% endfor %}
 </ul>
+
+{% else %}
+  <p>No polls are available.</p>
+{% endif %}
+
