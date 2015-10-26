@@ -3,5 +3,5 @@
 *.swp
 *.swn
 *.swm
-setting.py
+settings.py
 *.json
